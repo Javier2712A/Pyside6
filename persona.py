@@ -1,54 +1,67 @@
 
-class Persona:
-#clase que permite crear objetos de tipo persona
-    def __init__(self,cedula:str, nombre:str, apellido:str, sexo:str
-              ,email:str=None):
-        self._nombre = nombre
-        self._apellido = apellido
-        self._cedula = cedula
-        self._email = email
-        self._sexo = sexo
-    @property
-    def nombre(self):
-        return self._nombre
-    @nombre.setter
-    def nombre(self,nuevo_nombre):
-        self._nombre = nuevo_nombre
-    @property
-    def apellido(self):
-        return self._apellido
-    @apellido.setter
-    def apellido(self,nuevo_apellido):
-        self._apellido = nuevo_apellido
-    @property
-    def cedula(self):
-        return self._cedula
-    @cedula.setter
-    def cedula(self,nuevo_cedula):
-        self._cedula = nuevo_cedula
-    @property
-    def email(self):
-        return self._email
-    @email.setter
-    def email(self,nuevo_email):
-        self._email = nuevo_email
-    @property
-    def sexo(self):
-        return self._sexo
-    @sexo.setter
-    def sexo(self,nuevo_sexo):
-        self._sexo = nuevo_sexo
+from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtCore import QRegularExpression
+from PySide6.QtGui import QIntValidator
+from PySide6.QtWidgets import QMainWindow, QMessageBox
 
-    def __str__(self):
-        return (f"Persona [Nombre:{self._nombre},Apellido:{self._apellido},Cédula:{self._cedula},"
-                f"Email:{self._email},Sexo:{self._sexo}]")
+from Dominio.persona import Persona
+from UI.vtnPrincipal import Ui_vtnPrincipal
 
+class PersonaServicio(QMainWindow):
+    ''''
+    Clase que genera la logica de los objetos persona
+    '''
+    def __init__(self):
+        super(PersonaServicio,self).__init__()
+        self.ui = Ui_vtnPrincipal()
+        self.ui.setupUi(self)
+        self.ui.btnGuardar.clicked.connect(self.guardar)
+        self.ui.TxTCedula.setValidator(QIntValidator())
+        self.ui.btnLimpiar.clicked.connect(self.limpiar)
+    #Validación del correo
+        patron = r"^(?!.*\.{2})[a-zA-Z0-9._%+-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}$"
+        self.regex_email = QRegularExpression(patron)
+        self.email_validator = QRegularExpressionValidator(self.regex_email, self)
+        self.ui.TxTEmail.setValidator(self.email_validator)
 
-#def to_dict(self):
-   # return {
-      #  "nombre": self.nombre,
-       # "apellido": self.apellido,
-        #"cedula": self.cedula,
-        #"email": self.email,
-        #"sexo": self.sexo
-    #}
+    def _es_email_valido(self, email):
+        return self.regex_email.match(email).hasMatch()
+
+    def guardar(self):
+        nombre = self.ui.TxTNombre.text().strip()
+        apellido = self.ui.TxTApellido.text().strip()
+        cedula = self.ui.TxTCedula.text().strip()
+        email = self.ui.TxTEmail.text().strip()
+        sexo = self.ui.comboBox.currentText().strip()
+        es_email_valido = self.regex_email.match(email).hasMatch()
+
+        #validacion de los datos del formulario
+        if nombre == "":
+            QMessageBox.warning(self, "Advertencia", "Por favor ingresar el nombre")
+        elif apellido == "":
+            QMessageBox.warning(self, "Advertencia", "Por favor  ingresar el apellido")
+        elif len(cedula) < 10:
+            QMessageBox.warning(self, "Advertencia", "Por favor ingresar la cédula")
+        elif not self._es_email_valido(email):
+            QMessageBox.warning(self, "Advertencia", "El formato del correo es erróneo.\n"
+                                "Fíjese de no usar puntos continuos")
+        elif sexo == "Seleccionar":
+            QMessageBox.warning(self, "Advertencia", "Debe seleccionar el sexo")
+        else:
+            persona =Persona(cedula=cedula,nombre=nombre,apellido=apellido,email=email,sexo=sexo)
+            print(persona)
+            self.ui.statusbar.showMessage('Se guardó la información', 500)
+            #borrar campos del formulario
+            self.ui.TxTNombre.setText('')
+            self.ui.TxTApellido.setText('')
+            self.ui.TxTCedula.setText('')
+            self.ui.comboBox.setCurrentText(""'')
+            self.ui.TxTEmail.setText('')
+            self.ui.comboBox.setCurrentText("")
+            self.ui.comboBox.setCurrentIndex(0)
+    def limpiar(self):
+        nombre = self.ui.TxTNombre.clear()
+        apellido = self.ui.TxTApellido.clear()
+        cedula = self.ui.TxTCedula.clear()
+        correo = self.ui.TxTEmail.clear()
+        sexo = self.ui.comboBox.setCurrentIndex(0)
